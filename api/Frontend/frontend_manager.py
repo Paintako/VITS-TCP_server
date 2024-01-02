@@ -5,7 +5,7 @@ from .Taiwanese import tw_frontend
 # from .Indonesian import id_frontend
 from .phonemes import symbols
 from typing import List
-
+import re
 
 class frontend_manager:
     def __init__(self):
@@ -28,9 +28,23 @@ class frontend_manager:
         #     self.frontend = id_frontend.id_frontend()
         else:
             raise ValueError('Language not supported')
+    
+    def spliteKeyWord(self, str: str) -> list:
+        regex = r"(?:[.,!?;：，；。？！“”‘’':,;.?!()（）])|<t>.*?</t>|<ha>.*?</ha>|:<ha>.*?</ha>:|[\u4e00-\ufaff0-9]+|[a-zA-Z\s]+|[^\u4e00-\ufaff0-9a-zA-Z\s]+"
+        matches = re.findall(regex, str, re.UNICODE)
+        return matches
 
     def get_phonemes(self, sentence: str) -> List[str]:
-        return self.frontend.get_phonemes(sentence)
+        sentences = self.spliteKeyWord(sentence)
+        result = []
+        for seg in sentences:
+            if seg == '':
+                continue
+            phonemes = self.frontend.get_phonemes(seg)
+            result.append(phonemes)
+        return result
+            
+        
 
     def phonemes_to_id(self, phonemes: List[str]) -> List[int]:
         sequence = []    

@@ -4,7 +4,6 @@ from typing import Any, List
 import re
 from opencc import OpenCC
 
-
 class zh_frontend():
     def __init__(self) -> None:
         self.punc = "：，；。？！“”‘’':,;.?!"
@@ -16,8 +15,6 @@ class zh_frontend():
         
         orig_initials = lazy_pinyin(word, neutral_tone_with_five=True, style=Style.INITIALS)
         orig_finals = lazy_pinyin(word, neutral_tone_with_five=True, style=Style.FINALS_TONE3)
-        print('ori=====', orig_initials)
-        print('final===', orig_finals)
     
         # NOTE: post process for pypinyin outputs
         # we discriminate i, ii and iii
@@ -46,7 +43,6 @@ class zh_frontend():
             # Replace all English words in the sentence
             seg = re.sub('[a-zA-Z]+', '', seg)
             seg_cut = CKIP.call_ckip([seg])
-            print('CKIP = ', seg_cut)
             initials = []
             finals = []
         
@@ -80,7 +76,6 @@ class zh_frontend():
         cc = OpenCC('s2twp')
         for index, sentence in enumerate(sentences):
             sentences[index] = cc.convert(sentence)
-            print('Sentence befor g2p', sentences)
         phonemes = self._g2p(sentences)
         return phonemes[0]
     
