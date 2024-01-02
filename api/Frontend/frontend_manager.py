@@ -1,7 +1,7 @@
 from .Mandarine import zh_frontend
 from .Taiwanese import tw_frontend
 # from .Hakka import hakka_frontend
-# from .English import en_frontend
+from .English import en_frontend
 # from .Indonesian import id_frontend
 from .phonemes import symbols
 from typing import List
@@ -22,15 +22,15 @@ class frontend_manager:
             self.frontend = tw_frontend.tw_frontend(g2p_model="tw")
         # elif language == 'hakka':
         #     self.frontend = hakka_frontend.hakka_frontend()
-        # elif language == 'en':
-        #     self.frontend = en_frontend.en_frontend()
+        elif language == 'en':
+            self.frontend = en_frontend.en_frontend()
         # elif language == 'id':
         #     self.frontend = id_frontend.id_frontend()
         else:
             raise ValueError('Language not supported')
     
     def spliteKeyWord(self, str: str) -> list:
-        regex = r"(?:[.,!?;：，；。？！“”‘’':,;.?!()（）])|<t>.*?</t>|<ha>.*?</ha>|:<ha>.*?</ha>:|[\u4e00-\ufaff0-9]+|[a-zA-Z\s]+|[^\u4e00-\ufaff0-9a-zA-Z\s]+"
+        regex = r"(?:[.,!?;：，；。？！“”‘’':,;.?!()（）'])|<t>.*?</t>|<ha>.*?</ha>|:<ha>.*?</ha>:|[\u4e00-\ufaff0-9]+|[a-zA-Z\s']+|[^\u4e00-\ufaff0-9a-zA-Z\s']+"
         matches = re.findall(regex, str, re.UNICODE)
         return matches
 
