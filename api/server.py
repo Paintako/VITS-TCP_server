@@ -97,6 +97,10 @@ def request_handler(client_socket, addr):
     try:
         client_socket.sendall(result_bytes + END_OF_TRANSMISSION.encode())
     except socket.error as e:
+        result_data = {"status": False, "error": str(e)}
+        result_json = json.dumps(result_data)
+        result_bytes = bytes(result_json, "utf-8")
+        client_socket.sendall(result_bytes + END_OF_TRANSMISSION.encode())
         logger.error('Send failed: {}'.format(e))
     return
 
