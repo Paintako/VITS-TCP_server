@@ -20,3 +20,13 @@ Essentially, a TCP server capable of handling multiple clients concurrently.
 The server creates a new thread for each client connecting to it. 
 
 A pool of threads is utilized to limit the number of threads that can be created and to reuse threads that are no longer in use. Using a pool of threads is more efficient than creating a new thread for each client, as creating a new thread is a heavy operation.
+
+## Building Docker
+
+```sh
+// build docker image
+docker build -t vits .
+
+// run container
+docker run -dit --gpus all -v $PWD/api:/api -p 9999:9999 --name vits vits
+```
