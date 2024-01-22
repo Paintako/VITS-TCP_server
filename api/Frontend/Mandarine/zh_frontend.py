@@ -1,41 +1,60 @@
 from pypinyin import lazy_pinyin, Style
 from . import CKIP, number_normalization
-from typing import Any, List
+from typing import Any, List, Tuple
 import re
 from opencc import OpenCC
 
+import json
+import sys
+import os
+sys.path.append(f'{os.path.dirname(os.path.abspath(__file__))}/../../')
+sys.path.append(f'{os.path.dirname(os.path.abspath(__file__))}')
+from logs import service_logger
 class zh_frontend():
     def __init__(self) -> None:
         self.punc = "：，；。？！“”‘’':,;.?!"
-
-    def _get_initials_finals(self, word: str) -> List[List[str]]:
+        self.logger = service_logger.ServiceLogger()
+        print(os.getcwd())
+        # with open(f'./Frontend/Mandarine/rb_dict.txt', 'r', encoding='utf-8') as f:
+        # TODO, change to relative path
+        self.rb_dict = {
+            "睡不著" : "睡不着",
+            '睡覺': '睡着'
+        }
+    
+    def _get_initials_finals(self, word: str) -> Tuple[List[List[str]], bool]:
         initials = []
         finals = []
-
+        try:
+            word = word.replace(" ","") # remove space
+            
+            orig_initials = lazy_pinyin(word, neutral_tone_with_five=True, style=Style.INITIALS)
+            orig_finals = lazy_pinyin(word, neutral_tone_with_five=True, style=Style.FINALS_TONE3)
         
-        orig_initials = lazy_pinyin(word, neutral_tone_with_five=True, style=Style.INITIALS)
-        orig_finals = lazy_pinyin(word, neutral_tone_with_five=True, style=Style.FINALS_TONE3)
-    
-        # NOTE: post process for pypinyin outputs
-        # we discriminate i, ii and iii
-        for c, v in zip(orig_initials, orig_finals):
-            if re.match(r'i\d', v):
-                if c in ['z', 'c', 's']:
-                    v = re.sub('i', 'ii', v)
-                elif c in ['zh', 'ch', 'sh', 'r']:
-                    v = re.sub('i', 'iii', v)
-            if c and c not in self.punc:
-                initials.append(c+'1')
-            else:
-                initials.append(c)
-            if v not in self.punc:
-                finals.append(v[:-1]+'1'+v[-1])
-            else:
-                finals.append(v)
-    
-        return initials, finals
+            # NOTE: post process for pypinyin outputs
+            # we discriminate i, ii and iii
+            for c, v in zip(orig_initials, orig_finals):
+                if re.match(r'i\d', v):
+                    if c in ['z', 'c', 's']:
+                        v = re.sub('i', 'ii', v)
+                    elif c in ['zh', 'ch', 'sh', 'r']:
+                        v = re.sub('i', 'iii', v)
+                if c and c not in self.punc:
+                    initials.append(c+'1')
+                else:
+                    initials.append(c)
+                if v not in self.punc:
+                    finals.append(v[:-1]+'1'+v[-1])
+                else:
+                    finals.append(v)
+        
+            return initials, finals, True
 
-    def _g2p(self,sentences: List[str]) -> List[List[str]]:
+        except:
+            self.logger.error(f'Error transforming: {word}')
+            return [], [], False
+
+    def _g2p(self,sentences: List[str]) ->  Tuple[List[List[str]], bool]:
 
         phones_list = []
         for seg in sentences:
@@ -49,7 +68,9 @@ class zh_frontend():
             for word, pos in seg_cut:
                 if pos == 'FW':
                     continue
-                sub_initials, sub_finals = self._get_initials_finals(word)
+                sub_initials, sub_finals, status = self._get_initials_finals(word)
+                if status == False:
+                    return [], False
                 initials.append(sub_initials)
                 finals.append(sub_finals)
                 # assert len(sub_initials) == len(sub_finals) == len(word)
@@ -66,9 +87,9 @@ class zh_frontend():
 
             phones_list.append(phones)
 
-        return phones_list
+        return phones_list, True
 
-    def get_phonemes(self, sentence: str) -> List[List[str]]:
+    def get_phonemes(self, sentence: str) ->  Tuple[List[List[str]], bool]:
         # convert numbers and dates in sentence to Chinese
         sentences = [number_normalization.askForService(language='ch', chinese = sentence)]
         
@@ -76,8 +97,16 @@ class zh_frontend():
         cc = OpenCC('s2twp')
         for index, sentence in enumerate(sentences):
             sentences[index] = cc.convert(sentence)
-        phonemes = self._g2p(sentences)
-        return phonemes[0]
+        print(f'before replace: {sentences}')
+        for index, sentence in enumerate(sentences):
+            for key, value in self.rb_dict.items():
+                sentences[index] = sentences[index].replace(key, value)
+        print(f'after replace: {sentences}')
+        phonemes, status = self._g2p(sentences)
+        if status == False:
+            return [], False
+        self.logger.info(f'Converting {sentence} to phonemes: {phonemes[0]}')
+        return phonemes[0], True
     
 if __name__ == "__main__":
     frontend = zh_frontend()

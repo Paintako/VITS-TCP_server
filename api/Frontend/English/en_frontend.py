@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Tuple
 import os
 import sys
 
@@ -20,22 +20,26 @@ class en_frontend():
         self.pinyin = pinyin
         self.logger = service_logger.ServiceLogger()
         
-    def get_phonemes(self, sentence: str) -> List[List[str]]:
-        phonemes = []    
-        self.logger.info(f'Processing sentence: {sentence}')
+    def get_phonemes(self, sentence: str) -> Tuple[List[List[str]], bool]:
+        try:
+            phonemes = []    
+            self.logger.info(f'Processing sentence: {sentence}')
 
-        for word in sentence.split(" "):
-            word = word.upper().strip()
-            try:
-                ph = self.pinyin[word]
-                for p in ph.split(" "):    
-                    phonemes.append(p.strip())
-            except: 
-                self.logger.error(f'Word {word} not found in dictionary')
-                continue
-        print(phonemes)
-        return phonemes
-    
+            for word in sentence.split(" "):
+                word = word.upper().strip()
+                try:
+                    ph = self.pinyin[word]
+                    for p in ph.split(" "):    
+                        phonemes.append(p.strip())
+                except: 
+                    self.logger.error(f'Word {word} not found in dictionary')
+                    continue
+            self.logger.info(f'Converting {sentence} to phonemes: {phonemes}')
+            return phonemes, True
+        except:
+            self.logger.error(f'Error transforming: {sentence}')
+            return [], False
+            
 if __name__ == "__main__":
     frontend = en_frontend()
     sentence = 'Trying to be better'
