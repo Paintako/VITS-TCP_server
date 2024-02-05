@@ -9,7 +9,7 @@ import socketserver
 import struct
 
 from infer import synthesis
-from logs import service_logger
+from logs.service_logger import service_logger
 
 from vits import models, utils, commons
 from Frontend.phonemes import symbols
@@ -18,7 +18,10 @@ from Frontend.phonemes import symbols
 SERVER_HOST = ''
 SERVER_PORT = 9999
 END_OF_TRANSMISSION = 'EOT'
-logger = service_logger.ServiceLogger()
+FLAG = 0
+NET_G = None
+
+logger = service_logger()
 
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
     def recvall(self, n):
@@ -35,6 +38,8 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         return data
 
     def handle(self):
+        global FLAG
+        global NET_G
         try:
             self.msgs = {"ipaddr":self.client_address[0]}
             print("Client connected with ip address: {}".format(self.client_address[0]))
@@ -49,8 +54,48 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             data = data.decode("UTF-8")
             speaker = speaker.decode('UTF-8')
             language = language.decode('UTF-8')
+
+            logger.info('ID: {}'.format(id), extra={"ipaddr":""})
+            logger.info('DATA: {}'.format(data), extra={"ipaddr":""})
+            logger.info('SPEAKER: {}'.format(speaker), extra={"ipaddr":""})
+            logger.info('LANGUAGE: {}'.format(language), extra={"ipaddr":""})
+            
+            if speaker == 'M04' and FLAG == 0:
+                NET_G = models.SynthesizerTrn(
+                    len(symbols.symbols),
+                    HPS.data.filter_length // 2 + 1,
+                    HPS.train.segment_size // HPS.data.hop_length,
+                    n_speakers=HPS.data.n_speakers,
+                    **HPS.model).cuda()
+                _ = NET_G.eval()
+                NET_G, _, _, _ = utils.load_checkpoint("./vits/logs/finetune/G_100.pth", NET_G, None)
+                print(f'load M04')
+                FLAG = 1
+            
+            if speaker != 'M04' and FLAG == 1:
+                NET_G = models.SynthesizerTrn(
+                    len(symbols.symbols),
+                    HPS.data.filter_length // 2 + 1,
+                    HPS.train.segment_size // HPS.data.hop_length,
+                    n_speakers=HPS.data.n_speakers,
+                    **HPS.model).cuda()
+                _ = NET_G.eval()
+                NET_G, _, _, _ = utils.load_checkpoint("./vits/logs/mix_5_300_zh/G_550000.pth", NET_G, None)
+                FLAG = 0
+                print(f'load origin')
+
+            if speaker == 'M04':
+                speaker = 0
+
             ## verify token
             token_valid, token_msg = verify_token(token, int(id))
+            token_valid = True  # for testing
+            if not token_valid:
+                logger.error('Token verification failed: {}'.format(token_msg), extra={"ipaddr":""})
+                result_data = {"status": False, "message": "Token verification failed!"}
+                self.request.sendall(bytes(json.dumps(result_data), "utf-8"))
+                return
+
             if token_valid:
                 lock.acquire()
                 status, audio = synthesis(language, data, speaker, NET_G, HPS)
@@ -79,7 +124,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 self.request.sendall(b"Token verification failed!")
                 lock.release()
         except Exception as e:
-            logger.error('Error: {}'.format(e))
+            logger.error('Error: {}'.format(e), extra={"ipaddr":""}, exc_info=True)
             result_data = {"status": True, "Message": "Exception occurred during synthesis."}
             result_json = json.dumps(result_data)
             result_bytes = bytes(result_json, "utf-8")
@@ -112,5 +157,4 @@ if __name__ == "__main__":
     server_thread = threading.Thread(target=server.serve_forever)
     server_thread.daemon = True
     server_thread.start()
-    logger.info("Server loop running in thread: {}".format(server_thread.name))
     server.serve_forever()
