@@ -8,13 +8,13 @@ from .phoneme_process.ch2hak import askForService as ch2hak
 import sys
 import os
 sys.path.append(f'{os.path.dirname(os.path.abspath(__file__))}/../../')
-from logs import service_logger
+from logs.service_logger import service_logger
 
 class hakka_frontend():
     def __init__(self, g2p_model: str):
         self.punc = "：，；。？！“”‘’':,;.?!"
         self.g2p_model = g2p_model
-        self.logger = service_logger.ServiceLogger()
+        self.logger = service_logger()
         self.ch2hak = ch2hak
 
     def _get_initials_finals(self, sentence: str) -> Tuple[List[List[str]], str]:
@@ -32,13 +32,13 @@ class hakka_frontend():
         # hakka_pinyin = tts_client.askForService(text=sentence)
         hakka_pinyin = self.ch2hak(text=sentence, accent=accent, direction='hkji2pin')
         if (hakka_pinyin['hakkaTRN'] == 'Exceptions occurs'):
-            self.logger.error(f'Error transforming: {sentence}, result: {hakka_pinyin["hakkaTRN"]}')
+            self.logger.error(f'Error transforming: {sentence}, result: {hakka_pinyin["hakkaTRN"]}', extra={"ipaddr":""})
             return [], [], False
         hakka_pinyin = hakka_pinyin['hakkaTRN'][-2]
         hakka_pinyin = hakka_pinyin.replace(' 25 ', ' ， ')
         hakka_pinyin = hakka_pinyin.replace(' 23 ', ' ， ')
         hakka_pinyin = hakka_pinyin.replace("XXX", '，' )
-        self.logger.info(f'Transforming: {sentence}, result: {hakka_pinyin}')
+        self.logger.info(f'Transforming: {sentence}, result: {hakka_pinyin}', extra={"ipaddr":""})
 
         orig_initials, orig_finals = self._cut_vowel(hakka_pinyin)
         
@@ -109,7 +109,7 @@ class hakka_frontend():
         phonemes, status = self._g2p(sentence)
         if status == False:
             return [], False
-        self.logger.info(f'Converting {sentence} to phonemes: {phonemes}')
+        self.logger.info(f'Converting {sentence} to phonemes: {phonemes}', extra={"ipaddr":""})
         return phonemes, True
 
 if __name__ == "__main__":

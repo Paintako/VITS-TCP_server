@@ -9,17 +9,23 @@ import sys
 import os
 sys.path.append(f'{os.path.dirname(os.path.abspath(__file__))}/../../')
 sys.path.append(f'{os.path.dirname(os.path.abspath(__file__))}')
-from logs import service_logger
+from logs.service_logger import service_logger
 class zh_frontend():
     def __init__(self) -> None:
         self.punc = "：，；。？！“”‘’':,;.?!"
-        self.logger = service_logger.ServiceLogger()
+        self.logger = service_logger()
         print(os.getcwd())
         # with open(f'./Frontend/Mandarine/rb_dict.txt', 'r', encoding='utf-8') as f:
         # TODO, change to relative path
         self.rb_dict = {
             "睡不著" : "睡不着",
-            '睡覺': '睡着'
+            '睡覺': '睡着',
+            '活著': '活着',
+            '洗髮': '洗法',
+            '頭髮': '頭法',
+            '垃圾': '樂色',
+            '跌' : '蝶',
+            '摩' : '魔',
         }
     
     def _get_initials_finals(self, word: str) -> Tuple[List[List[str]], bool]:
@@ -51,7 +57,7 @@ class zh_frontend():
             return initials, finals, True
 
         except:
-            self.logger.error(f'Error transforming: {word}')
+            self.logger.error(f'Error transforming: {word}', extra={"ipaddr":""}, exc_info=True)
             return [], [], False
 
     def _g2p(self,sentences: List[str]) ->  Tuple[List[List[str]], bool]:
@@ -105,7 +111,7 @@ class zh_frontend():
         phonemes, status = self._g2p(sentences)
         if status == False:
             return [], False
-        self.logger.info(f'Converting {sentence} to phonemes: {phonemes[0]}')
+        self.logger.info(f'Converting {sentence} to phonemes: {phonemes[0]}', extra={"ipaddr":""})
         return phonemes[0], True
     
 if __name__ == "__main__":
