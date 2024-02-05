@@ -59,6 +59,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             logger.info('DATA: {}'.format(data), extra={"ipaddr":""})
             logger.info('SPEAKER: {}'.format(speaker), extra={"ipaddr":""})
             logger.info('LANGUAGE: {}'.format(language), extra={"ipaddr":""})
+            logger.info('TOKEN: {}'.format(token), extra={"ipaddr":""})
             
             if speaker == 'M04' and FLAG == 0:
                 NET_G = models.SynthesizerTrn(
