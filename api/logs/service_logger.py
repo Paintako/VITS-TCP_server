@@ -18,7 +18,7 @@ def service_logger():
             }, # use the above "normal" formatter
             'file': {  # the name of handler
                 'class': 'logging.handlers.RotatingFileHandler',  # emit to disk file
-                'filename': 'server.log',  # the path of the log file
+                'filename': './logs/server.log',  # the path of the log file
                 'formatter': 'normal',  # use the above "normal" formatter
                 'maxBytes': 1024*1024,
                 'backupCount': 3
