@@ -27,6 +27,19 @@ A pool of threads is utilized to limit the number of threads that can be created
 // build docker image
 docker build -t vits .
 
-// run container
-docker run -dit --gpus all -v $PWD/api:/api -p 9999:9999 --name vits vits
+// run container, specify your port you wish to run with
+docker run -dit --gpus all -v $PWD/api:/api -p 9999:9999 --name vits vits python3 ./server.py --port 9999
+docker run -dit --gpus all -v $PWD/api:/api -p 9998:9998 --name vits_kaiwater vits python3 ./server.py --port 9998
+docker run -dit --gpus all -v $PWD/api:/api -p 9997:9997 --name vits_politics vits python3 ./server.py --port 9997
 ```
+
+## Restart Docker
+因為有多隻 API run on 同一個 image, 重啟可以下下面的指令
+```sh
+docker restart $(docker ps -aqf "name=vits*")
+```
+
+## API 使用情況
+`9999` for web, 憂鬱症
+`9998` for app
+`9997` for politics
