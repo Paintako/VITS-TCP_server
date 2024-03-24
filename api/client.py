@@ -40,41 +40,61 @@ import argparse
             4792|張豈只 (from youtube video)
             4793|李沅翰 (實驗室內部錄音人員)
             4794|趙少康
-            4794|黃偉哲
-            4795|MA_M96 (實驗室內部錄音人員)
-            4796|M99 (好像是朱立倫)
-            4797|P_F_001 (盧秀燕)
-            4798|P_M_006 (ㄌㄨㄚˋ 著不拆)
-            4799|P_M_019
-            4800|P_M_004
-            4801|P_M_008
-            4802|P_M_024
-            4803|M96 (TOYZ)
-            4804|P_M_015
-            4805|M101 
-            4806|P_M_022
-            4807|P_M_003
-            4808|P_M_002
-            4809|P_M_023
-            4810|P_M_011
-            4811|P_M_005
-            4812|F101 (ㄘㄨㄚˋ 英文)
-            4813|P_M_001
-            4814|P_M_010
-            4815|podF04
-            4816|podM02
-            4817|podF03
-            4818|podM03
-            4819|podF01_n 
-            4820|M95 (戰神黃國昌)
-            4821|podF02 
+            4795|黃偉哲
+            4796|MA_M96 (實驗室內部錄音人員)
+            4797|郭台銘
+            4798|盧秀燕
+            4799|侯友宜
+            4800|江啟程
+            4802|郭正亮
+            4805|陳吉仲
+            4806|陳其邁
+            4807|侯漢廷
+            4808|林佳龍
+            4809|蔣萬安
+            4810|習近平
+            4811|馬英九
+            4812|賴清德
+            4813|蔡英文
+            4814|陳時中
             2794|F14
+        }
+    8. 政治人物清單:
+        {
+            4781|林志堅 
+            4782|邱威傑
+            4783|薛瑞元
+            4784|柯文哲
+            4785|韓國瑜
+            4786|侯漢廷
+            4787|謝龍介
+            4788|鄭文燦
+            4790|王世堅
+            4791|陳水扁
+            4794|趙少康
+            4795|黃偉哲
+            4797|郭台銘
+            4798|盧秀燕
+            4799|侯友宜
+            4800|江啟程
+            4802|郭正亮
+            4805|陳吉仲
+            4806|陳其邁
+            4807|侯漢廷
+            4808|林佳龍
+            4809|蔣萬安
+            4810|習近平
+            4811|馬英九
+            4812|賴清德
+            4813|蔡英文
+            4814|陳時中
         }
 """
 
 
 SERVER, PORT = '140.116.245.147', 9999
 END_OF_TRANSMISSION = 'EOT'
+FINETUNE_LIST = ["P_M_005", "M95", "M04"]
 class Client:
     def __init__(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -83,6 +103,16 @@ class Client:
         self._id = str(10012)
 
     def send(self, language, speaker, data):
+        # check speaker id is valid
+        if speaker not in [str(i) for i in range(0, 4817)] and speaker not in FINETUNE_LIST:
+            raise ValueError("Speaker id must be in range 0 ~ 4815 or in FINETUNE_LIST")
+        
+        if data == "":
+            raise ValueError("Text must be not empty")
+
+        if language not in ['zh', 'tw', 'hakka', 'en', 'id', 'mix']:
+            raise ValueError("Language must be one of ['zh', 'tw', 'hakka', 'en', 'id']")
+
         data = bytes(self._id + "@@@" + self._token + "@@@" + language + '@@@' + speaker + '@@@'+ data, "utf-8")
         data += END_OF_TRANSMISSION.encode() # END_OF_TRANSMISSION: 'EOT', end of transmission
         self.sock.sendall(data)
@@ -102,10 +132,9 @@ class Client:
 
 if __name__ == '__main__':
     args = argparse.ArgumentParser()
-    text = "funny mud pee omg"
-    args.add_argument('--language', type=str, default='en')
-    args.add_argument('--speaker', type=str, default='2792')
-    args.add_argument('--text', type=str, default=text)
+    args.add_argument('--language', type=str, default='mix')
+    args.add_argument('--speaker', type=str, default='4588')
+    args.add_argument('--text', type=str, default="")
 
     args = args.parse_args()
     client = Client()
