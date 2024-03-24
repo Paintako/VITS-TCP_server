@@ -28,11 +28,12 @@ class tw_frontend():
         try:
             if self.g2p_model != "tw_tl":
                 sentence = num_nor(language='tl', chinese=sentence)
-                print(sentence)
+                self.logger.info(f'Number normalization: {sentence}', extra={"ipaddr":""})
                 tl_text = ch2tl(text=sentence)
-                print(tl_text)
+                word = tl_text['tailuo']
+                self.logger.info(f'Chinese to Taiwanese: {word}', extra={"ipaddr":""})
                 tl_sandhi = sandhi(tai_luo=tl_text['tailuo'])
-                print(tl_sandhi)
+                self.logger.info(f'Sandhi from chinese words: {tl_sandhi}', extra={"ipaddr":""})
                 if tl_sandhi == "":
                     self.logger.error(f'TL_sandhi {sentence} got problem', extra={"ipaddr":""})
                     return [], [], True
@@ -41,9 +42,8 @@ class tw_frontend():
                     self.logger.error(f'Exceptions occurs, {sentence} got problem', extra={"ipaddr":""})
                     return [], [], False
             else:
-                print(f'before: {tl_sandhi}')
                 tl_sandhi = sandhi(tai_luo=tl_sandhi)
-                print(f'after: {tl_sandhi}')
+                self.logger.info(f'Sandhi from tw_tl: {tl_sandhi}', extra={"ipaddr":""})
         except:
             self.logger.error(f'ch2phoneme pipline failed, {sentence} got problem', extra={"ipaddr":""}, exc_info=True)
             return [], [], False
@@ -52,6 +52,9 @@ class tw_frontend():
 
         if '-' in tl_sandhi:
             tl_sandhi = tl_sandhi.replace('-', ' ')
+        if tl_sandhi == "":
+            self.logger.error(f'TL_sandhi empty, skipping', extra={"ipaddr":""})
+            return [], [], True
         ctl_text = tl2ctl(tai_luo=tl_sandhi)
         print(ctl_text)
         orig_initials, orig_finals = self._cut_vowel(ctl_text)
@@ -112,7 +115,7 @@ class tw_frontend():
         return initials, finals
 
     def get_phonemes(self, sentence: str) -> List[str]:
-        phonemes, status = self._g2p(sentence)
+        phonemes, status = self._g2p(sentence)                
         if status == False:
             self.logger.error(f'Error transforming: {sentence}, result: {phonemes}', extra={"ipaddr":""})
             return [], False
@@ -121,5 +124,5 @@ class tw_frontend():
     
 if __name__ == "__main__":
     frontend = Frontend(g2p_model="tw")
-    print(frontend.get_phonemes("我想回家"))
+    print(frontend.get_phonemes("你是白癡是不是"))
 
