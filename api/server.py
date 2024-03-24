@@ -69,7 +69,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             logger.info('LANGUAGE: {}'.format(language), extra={"ipaddr":""})
             logger.info('TOKEN: {}'.format(token), extra={"ipaddr":""})
 
-            language_list = ['zh', 'tw', 'ha', 'en', 'id', 'mix']
+            language_list = ['zh', 'tw', 'hakka', 'en', 'id', 'mix']
             if language not in language_list:
                 result_data = {"status": False, "message": "Invalid language!"}
                 self.request.sendall(bytes(json.dumps(result_data), "utf-8"))
