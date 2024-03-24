@@ -75,8 +75,17 @@ class frontend_manager:
 
 
     def get_phonemes(self, sentence: str) -> Tuple[List[str], bool]:
+
+        # process punctuations
+        sentence = re.sub(r'[「」]', '', sentence)
+        sentence = re.sub(r'[“”]', '', sentence)
+        sentence = re.sub(r'[‘’]', '', sentence)
+        sentence = re.sub(r'[（(：)）＿]', '', sentence)
+        sentence = re.sub(r'[、]', '，', sentence)
+
         if self.language == 'tw_tl':
-            sentences = [sentence]    
+            regex = r"[.,;!?.,!?;：，；。？！“”‘’':,;.?!()（）]"
+            sentences = re.split(regex, sentence)
         else:
             sentences = self.spliteKeyWord(sentence)
         self.logger.info(f'length of segmentations: {len(sentences)}, After spliting puncs: {sentences}', extra={"ipaddr":""})
@@ -155,8 +164,7 @@ class frontend_manager:
             try:
                 symbol_id = self._symbol_to_id[symbol]
             except:
-                # self.logger.error(f'None existing {symbol}')
-                self.logger.error(f'None existing {symbol}', extra={"ipaddr":""}, exc_info=True)
+                self.logger.error(f'None existing {symbol}, continue', extra={"ipaddr":""})
                 symbol_id = 0
             sequence += [symbol_id]
         return sequence
