@@ -92,7 +92,7 @@ import argparse
 """
 
 
-SERVER, PORT = '140.116.245.147', 9999
+SERVER, PORT = '140.116.245.147', 9998
 END_OF_TRANSMISSION = 'EOT'
 FINETUNE_LIST = ["P_M_005", "M95", "M04"]
 class Client:
@@ -110,7 +110,7 @@ class Client:
         if data == "":
             raise ValueError("Text must be not empty")
 
-        if language not in ['zh', 'tw', 'hakka', 'en', 'id', 'mix']:
+        if language not in ['zh', 'tw', 'hakka', 'en', 'id', 'mix', 'tw_tl']:
             raise ValueError("Language must be one of ['zh', 'tw', 'hakka', 'en', 'id']")
 
         data = bytes(self._id + "@@@" + self._token + "@@@" + language + '@@@' + speaker + '@@@'+ data, "utf-8")
@@ -152,5 +152,12 @@ if __name__ == '__main__':
             with open(f"output.wav", 'wb') as f:
                 f.write(result_file_data)
             print("File received complete")
-
-    print('Inference time: {}'.format(time.time() - start_time))
+        else:
+            print(response_data.get("message", ""))
+        if response_data.get("tone_sandhi", ""):
+            print(response_data.get("tone_sandhi", ""))
+        print('Response time: {}'.format(time.time() - start_time))
+    
+    # close connection
+    client.close()
+    

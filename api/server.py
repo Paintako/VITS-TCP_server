@@ -14,6 +14,7 @@ from logs.service_logger import service_logger
 
 from vits import models, utils
 from Frontend.phonemes import symbols
+from Frontend.Taiwanese.phoneme_process import ch2tl, sandhi_client
 
 # Define server address and port
 SERVER_HOST = ''
@@ -32,16 +33,27 @@ NET_G = None
 logger = service_logger()
 
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
+    # def recvall(self, n):
+    #     data = b''
+    #     while len(data) < n:
+    #         packet = self.request.recv(n-len(data))
+    #         if not packet:
+    #             return None
+    #         if END_OF_TRANSMISSION.encode() in packet:
+    #             data += packet
+    #             break
+    #         data += packet
+
+    #     return data
     def recvall(self, n):
         data = b''
-        while len(data) < n:
-            packet = self.request.recv(n-len(data))
+        while True:
+            packet = self.request.recv(n)
             if not packet:
-                return None
-            if END_OF_TRANSMISSION.encode() in packet:
-                data += packet
                 break
             data += packet
+            if END_OF_TRANSMISSION.encode() in packet:
+                break
 
         return data
 
@@ -69,7 +81,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             logger.info('LANGUAGE: {}'.format(language), extra={"ipaddr":""})
             logger.info('TOKEN: {}'.format(token), extra={"ipaddr":""})
 
-            language_list = ['zh', 'tw', 'hakka', 'en', 'id', 'mix']
+            language_list = ['zh', 'tw', 'hakka', 'en', 'id', 'mix', 'tw_tl']
             if language not in language_list:
                 result_data = {"status": False, "message": "Invalid language!"}
                 self.request.sendall(bytes(json.dumps(result_data), "utf-8"))
@@ -155,6 +167,10 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 return
 
             if token_valid:
+                if language == 'tw_tl':
+                    tone_sandhi = sandhi_client.askForService(tai_luo=data)
+                else:
+                    tone_sandhi = ""
                 status, audio = synthesis(language, data, speaker, NET_G, HPS)
                 if status != True:
                     exception_msg = "Exception occurred during synthesis."
@@ -170,7 +186,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     result_file_data = b""
                     with open('test.wav', 'rb') as f:
                         result_file_data = f.read()
-                    result_data = {"status": True, "bytes": base64.b64encode(result_file_data).decode("utf-8")}
+                    result_data = {"status": True, "bytes": base64.b64encode(result_file_data).decode("utf-8"), "tone_sandhi": tone_sandhi}
                     result_json = json.dumps(result_data)
                     result_bytes = bytes(result_json, "utf-8")
                     if lock.locked():
